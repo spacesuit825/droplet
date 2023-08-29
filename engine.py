@@ -84,7 +84,6 @@ def computeFluxes(
     ) -> None:
      
     x_flux_x[1:nx, 1:ny + 1] = 0.25 * (x_velocity_field[2:nx + 1, 1:ny + 1] + x_velocity_field[1:nx, 1:ny + 1])**2 - mu * (x_velocity_field[2:nx + 1, 1:ny + 1] - x_velocity_field[1:nx, 1:ny + 1]) / dx
-    
     y_flux_x[1:nx, 1:ny + 1] = 0.25 * (y_velocity_field[2:nx + 1, 1:ny + 1] + y_velocity_field[1:nx, 1:ny + 1]) * (x_velocity_field[1:nx, 2:ny + 2] + x_velocity_field[1:nx, 1:ny + 1]) - mu * (x_velocity_field[1:nx, 2:ny + 2] - x_velocity_field[1:nx, 1:ny + 1]) / dy
     
     x_flux_y[1:nx + 1, 1:ny] = 0.25 * (x_velocity_field[1:ny + 1, 2:nx + 1] + x_velocity_field[1:nx + 1, 1:ny]) * (y_velocity_field[2:nx + 2, 1:ny] + y_velocity_field[1:nx + 1, 1:ny]) - mu * (y_velocity_field[2:nx + 2, 1:ny] - y_velocity_field[1:nx +1, 1:ny]) / dx
@@ -99,6 +98,9 @@ def computeStarredVelocities(
         x_star_field: np.array,
         y_star_field: np.array
     ) -> None:
+
+    #x_star_field[1:nx, 1:ny + 1] = x_velocity_field[1:nx, 1:ny + 1] - (dt / (dx * dy)) * (dy * (x_flux_x[1:nx, 1:ny + 1] - x_flux_x[:nx - 1, 1:ny + 1]) + dx * (y_flux_x[1:nx, 1:ny + 1] - x_flux_x[1:nx, :ny])) + dt * gx
+    #y_star_field[1:nx + 1, 1:ny] = y_velocity_field[1:nx + 1, 1:ny] - (dt / (dx * dy)) * (dy * (x_flux_y[1:nx + 1, 1:ny] - x_flux_y[:nx, 1:ny]) + dx * (y_flux_y[1:nx + 1, 1:ny] - y_flux_y[1:nx + 1, :ny - 1])) + dt * gy
 
     for i in range(1, nx):
         for j in range(1, ny + 1):
@@ -116,22 +118,15 @@ def correctVelocities(
         pressure: np.array
     ) -> None:
     
-    for i in range(1, nx + 1):
-        for j in range(1, nx + 1):
-            prhs[i, j] = (rho / dt) * ((x_star_field[i, j] - x_star_field[i - 1, j]) / dx + (y_star_field[i, j] - y_star_field[i, j - 1]) / dy)
+    prhs[1:nx + 1, 1:ny + 1] = (rho / dt) * ((x_star_field[1:nx + 1, 1:ny + 1] - x_star_field[:nx, 1:ny + 1]) / dx + (y_star_field[1:nx + 1, 1:ny + 1] - y_star_field[1:nx + 1, :ny]) / dy)
 
     beta = 1.2
 
     pressure, error = successiveOverRelaxation(beta,  nx, ny, pressure, prhs, coeffs)
 
-    # Correct the u velocity
-    for i in range(1, nx):
-        for j in range(1, ny + 1):
-            x_velocity_field[i, j] = x_star_field[i, j] - dt / dx * (pressure[i + 1, j] - pressure[i, j]) / rho
-            
-    for i in range(1, nx + 1):
-        for j in range(1, ny):
-            y_velocity_field[i, j] = y_star_field[i, j] - dt / dy * (pressure[i, j + 1] - pressure[i, j]) / rho
+    x_velocity_field[1:nx, 1:ny + 1] = x_star_field[1:nx, 1:ny + 1] - dt / dx * (pressure[2:nx + 1, 1:ny + 1] - pressure[1:nx, 1:ny + 1]) / rho       
+    y_velocity_field[1:nx + 1, 1:ny] = y_star_field[1:nx + 1, 1:ny] - dt / dy * (pressure[1:nx + 1, 2:ny + 1] - pressure[1:nx + 1, 1:ny]) / rho
+
 
 def applyBoundaryConditions(
         x_velocity_field: np.array,
@@ -149,7 +144,7 @@ def applyBoundaryConditions(
     x_velocity_field[-1, :] = ueast
 
 xx, yy = np.meshgrid(xnodes, ynodes, indexing = "ij")
-for i in range(1000):
+for i in range(2000):
     applyBoundaryConditions(x_velocity_field, y_velocity_field)
     computeFluxes(x_velocity_field, y_velocity_field, x_flux_x, y_flux_x, x_flux_y, y_flux_y, x_star_field, y_star_field)
     computeStarredVelocities(x_flux_x, y_flux_x, x_flux_y, y_flux_y, x_velocity_field, x_star_field, y_star_field)
@@ -160,10 +155,10 @@ for i in range(1000):
         vv = 0.5 * (y_velocity_field[1:-1, 1:] + y_velocity_field[1:-1, :-1])
         print(i)
         
-        print(np.linalg.norm(uu))
         ax.contourf(xx, yy, np.sqrt(uu * uu + vv * vv), vmin = 0.0, vmax = 1.0)
         ax.quiver(xx, yy, uu, vv)
         plt.pause(0.001)
+
 plt.show()
     #computeCellCentredVelocities(x_velocity_field, y_velocity_field)
 

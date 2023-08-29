@@ -128,3 +128,27 @@ if __name__ == "__main__":
     #         check[i, j] = 0.25 * (x_velocity_field[i, j + 1] + x_velocity_field[i, j]) * (y_velocity_field[i + 1, j] + y_velocity_field[i, j]) - mu * (y_velocity_field[i + 1, j] - y_velocity_field[i, j]) / dx
 
     #         y_star_field[i, j] = y_velocity_field[i, j] - (dt / (dx * dy)) * (dy * (east_flux - west_flux) + dx * (north_flux - south_flux)) + dt * gy
+
+    # for i in range(1, nx):
+    #     for j in range(1, ny + 1):
+    #         x_star_field[i, j] = x_velocity_field[i, j] - (dt / (dx * dy)) * (dy * (x_flux_x[i, j] - x_flux_x[i - 1, j]) + dx * (y_flux_x[i, j] - y_flux_x[i, j - 1])) + dt * gx
+
+    # for i in range(1, nx + 1):
+    #     for j in range(1, ny):
+    #         y_star_field[i, j] = y_velocity_field[i, j] - (dt / (dx * dy)) * (dy * (x_flux_y[i, j] - x_flux_y[i - 1, j]) + dx * (y_flux_y[i, j] - y_flux_y[i, j - 1])) + dt * gy
+    # print(y_star_field)
+
+    # # Correct the u velocity
+    # for i in range(1, nx):
+    #     for j in range(1, ny + 1):
+    #         x_velocity_field[i, j] = x_star_field[i, j] - dt / dx * (pressure[i + 1, j] - pressure[i, j]) / rho
+
+    # for i in range(1, nx + 1):
+    #     for j in range(1, ny):
+    #         y_velocity_field[i, j] = y_star_field[i, j] - dt / dy * (pressure[i, j + 1] - pressure[i, j]) / rho
+    # print(y_velocity_field)
+    
+    # for i in range(1, nx + 1):
+    #     for j in range(1, nx + 1):
+    #         prhs[i, j] = (rho / dt) * ((x_star_field[i, j] - x_star_field[i - 1, j]) / dx + (y_star_field[i, j] - y_star_field[i, j - 1]) / dy)
+    # print(prhs)
