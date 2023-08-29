@@ -43,7 +43,7 @@ def successiveOverRelaxation(
 
 if __name__ == "__main__":
     
-    velocity_import = np.load("C:/Users/lachl/OneDrive/Documents/python/droplet/data/lid_driven_cavity_nondivfree_velocities.npz")
+    velocity_import = np.load("C:/Users/lachl/Documents/python/droplet/data/lid_driven_cavity_nondivfree_velocities.npz")
 
     ut = velocity_import["ut"]
     vt = velocity_import["vt"]
@@ -55,7 +55,8 @@ if __name__ == "__main__":
     ny = ut.shape[1] - 2
 
     print(nx, ny)
-    print(pressure.shape)
+    print(u.shape)
+    print(v.shape)
 
     rho, Lx, Ly = 1.0, 1.0, 1.0
 
@@ -100,3 +101,30 @@ if __name__ == "__main__":
     divuu = (u[1:, 1:-1] - u[:-1, 1:-1]) / dx + (v[1:-1, 1:] - v[1:-1, :-1]) / dy
     print("divuu: ", np.linalg.norm(divuu))
     print(error)
+
+    # # print(x_velocity_field)
+    # for i in range(1, nx):
+    #     for j in range(1, ny + 1):
+    #         east_flux = 0.25 * (x_velocity_field[i + 1, j] + x_velocity_field[i, j])**2 - mu * (x_velocity_field[i + 1, j] - x_velocity_field[i, j]) / dx
+    #         north_flux = 0.25 * (y_velocity_field[i + 1, j] + y_velocity_field[i, j]) * (x_velocity_field[i, j + 1] + x_velocity_field[i, j]) - mu * (x_velocity_field[i, j + 1] - x_velocity_field[i, j]) / dy
+    #         west_flux = 0.25 * (x_velocity_field[i, j] + x_velocity_field[i - 1, j])**2 - mu * (x_velocity_field[i, j] - x_velocity_field[i - 1, j]) / dx
+    #         south_flux = 0.25 * (y_velocity_field[i, j - 1] + y_velocity_field[i + 1, j - 1]) * (x_velocity_field[i, j] + x_velocity_field[i, j - 1]) - mu * (x_velocity_field[i, j] - x_velocity_field[i, j - 1]) / dy
+    #         # bed_e[i, j] = east_flux
+    #         # bed_w[i, j] = north_flux
+    #         # check[i, j] = 0.25 * (x_velocity_field[i + 1, j] + x_velocity_field[i, j])**2
+    #         check2[i, j] = - mu * (x_velocity_field[i + 1, j] - x_velocity_field[i, j]) / dx
+    #         x_star_field[i, j] = x_velocity_field[i, j] - (dt / (dx * dy)) * (dy * (east_flux - west_flux) + dx * (north_flux - south_flux)) + dt * gx
+
+    # bed_e = np.zeros((nx + 1, ny))
+    # bed_w = np.zeros((nx + 1, ny))
+    # for i in range(1, nx + 1):
+    #     for j in range(1, ny):
+    #         east_flux = 0.25 * (x_velocity_field[i, j + 1] + x_velocity_field[i, j]) * (y_velocity_field[i + 1, j] + y_velocity_field[i, j]) - mu * (y_velocity_field[i + 1, j] - y_velocity_field[i, j]) / dx
+    #         north_flux = 0.25 * (y_velocity_field[i, j + 1] + y_velocity_field[i, j])**2 - mu * (y_velocity_field[i, j + 1] - y_velocity_field[i, j]) / dy
+    #         west_flux = 0.25 * (x_velocity_field[i - 1, j + 1] + x_velocity_field[i - 1, j]) * (y_velocity_field[i, j] + y_velocity_field[i - 1, j]) - mu * (y_velocity_field[i, j] - y_velocity_field[i - 1, j]) / dx
+    #         south_flux = 0.25 * (y_velocity_field[i, j] + y_velocity_field[i, j - 1])**2 - mu * (y_velocity_field[i, j] - y_velocity_field[i, j - 1]) / dy
+    #         bed_e[i, j] = east_flux
+    #         bed_w[i, j] = north_flux
+    #         check[i, j] = 0.25 * (x_velocity_field[i, j + 1] + x_velocity_field[i, j]) * (y_velocity_field[i + 1, j] + y_velocity_field[i, j]) - mu * (y_velocity_field[i + 1, j] - y_velocity_field[i, j]) / dx
+
+    #         y_star_field[i, j] = y_velocity_field[i, j] - (dt / (dx * dy)) * (dy * (east_flux - west_flux) + dx * (north_flux - south_flux)) + dt * gy
