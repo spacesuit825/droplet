@@ -18,19 +18,43 @@ def successiveOverRelaxation(
     Ap = coeffs["A_P"]
 
     iteration = 0
-    max_iterations = 1000
+    max_iterations = 10000
     error = 1e5
     tol = 1e-5
     
     while error > tol and iteration < max_iterations:
         p_previous = pressure.copy()
+
+        test_pressure = pressure.copy()
+
+        #print( Aw[1:nx + 1, 1:ny + 1] * test_pressure[:nx, 1:ny + 1])
         
+        # print(prhs)
+
+        # pressure[1:nx + 1, 1:ny + 1] = ((1 - beta) * pressure[1:nx + 1, 1:ny + 1] + (beta / Ap[1:nx + 1, 1:ny + 1]) * 
+        #     (Ae[1:nx + 1, 1:ny + 1] * pressure[2:nx + 2, 1:ny + 1] + 
+        #     Aw[1:nx + 1, 1:ny + 1] * pressure[:nx, 1:ny + 1] +
+        #     An[1:nx + 1, 1:ny + 1] * pressure[1:nx + 1, 2:ny + 2] +
+        #     As[1:nx + 1, 1:ny + 1] * pressure[1:nx + 1, :ny] -
+        #     prhs[1:nx + 1, 1:ny + 1]))
+        
+        # print(pressure)
+
         for i in range(1, nx + 1):
+            
+            ip1 = i + 1
+            im1 = i - 1
+
+            # if i + 1 > nx:
+            #     ip1 = 1
+            # elif i - 1 < 1:
+            #     im1 = nx
+            
             for j in range(1, ny + 1):
-                pressure[i, j] = (1 - beta) * pressure[i, j] + (beta / Ap[i, j]) * (Ae[i, j] * pressure[i + 1, j] + Aw[i, j] * pressure[i - 1, j] + \
+                pressure[i, j] = (1 - beta) * pressure[i, j] + (beta / Ap[i, j]) * (Ae[i, j] * pressure[ip1, j] + Aw[i, j] * pressure[im1, j] + \
                                                                                     An[i, j] * pressure[i, j + 1] + As[i, j] * pressure[i, j - 1] - \
                                                                                     prhs[i, j])
-
+                
         error = np.linalg.norm(pressure - p_previous)
 
         iteration += 1
