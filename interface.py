@@ -109,12 +109,12 @@ class World:
         if plot_contour:
             fig, ax = plt.subplots(1, 1)
 
-        con = ax.contourf(xx, yy, T, vmin = 300.0, vmax = 400.0, levels = 20)
-        cbar = fig.colorbar(con)
+        #con = ax.contourf(xx, yy, T, vmin = 300.0, vmax = 400.0, levels = 20)
+        #cbar = fig.colorbar(con)
             
 
         for i in range(n_timesteps + 1):
-            DropletEngine.applyBoundaryConditions(self.bc, self.bc_mask, x_velocity_field, y_velocity_field, x_flux_x, y_flux_x, x_flux_y, y_flux_y)
+            DropletEngine.applyBoundaryConditions(self.bc, x_velocity_field, y_velocity_field, x_flux_x, y_flux_x, x_flux_y, y_flux_y, bc_mask = self.bc_mask)
             DropletEngine.computeTemperatureField(dt, temp_bc, self.nx, self.ny, dx, dy, x_velocity_field, y_velocity_field, t_x_flux, t_y_flux, alpha, T)
             DropletEngine.computeFluxes(rho, mu, self.nx, self.ny, dt, self.gx, self.gy, dx, dy, x_velocity_field, y_velocity_field, x_flux_x, y_flux_x, x_flux_y, y_flux_y, x_star_field, y_star_field)
             DropletEngine.computeStarredVelocities(dt, gx, gy, rho, mu, self.nx, self.ny, dx, dy, x_flux_x, y_flux_x, x_flux_y, y_flux_y, x_velocity_field, y_velocity_field, x_star_field, y_star_field, T, T_cool, 0.002)
@@ -129,10 +129,10 @@ class World:
             if plot_contour:
                 if (i % 10) == 0:
                     
-                    cbar.remove()
-                    #ax.contourf(xx, yy, np.sqrt(uu * uu + vv * vv), vmin = 0.0, vmax = 1.0, levels = 20)
-                    con = ax.contourf(xx, yy, T, vmin = 300.0, vmax = 350.0, levels = 20)
-                    cbar = fig.colorbar(con)
+                    #cbar.remove()
+                    ax.contourf(xx, yy, np.sqrt(uu * uu + vv * vv), vmin = 0.0, vmax = 0.5, levels = 20)
+                    #con = ax.contourf(xx, yy, T, vmin = 300.0, vmax = 350.0, levels = 20)
+                    #cbar = fig.colorbar(con)
                     ax.quiver(xx, yy, uu, vv)
                     plt.pause(0.001)
         

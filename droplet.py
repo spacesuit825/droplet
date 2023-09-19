@@ -12,10 +12,10 @@ setup = {
     "gx": 0.0,
     "gy": -9.81,
     "bc": {
-        "usouth": 2,
+        "usouth": 0,
         "unorth": 2,
         "vwest": 0,
-        "veast": 2,
+        "veast": 0,
         "vsouth": 0,
         "vnorth": 0,
         "uwest": 0,
@@ -25,7 +25,7 @@ setup = {
     }
 }
 
-mask = np.loadtxt("test.txt").transpose()
+mask = np.loadtxt("test.txt", dtype = bool).transpose()
 
 world = World("test_world")
 world.setUpWorld(setup)

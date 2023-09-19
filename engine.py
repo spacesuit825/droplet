@@ -169,8 +169,8 @@ def computeTemperatureField(
         T: np.array
     ):
 
-    T_wall_t = 400
-    T_wall_b = 300
+    T_wall_t = 300
+    T_wall_b = 400
 
     x_flux[1:-1, :] = (((T[1:, :] + T[:-1, :]) / 2) * x_velocity_field[1:nx, 1:nx + 1]) - alpha * (T[1:, :] - T[:-1, :]) / dx
     y_flux[:, 1:-1] = (((T[:, 1:] + T[:, :-1]) / 2) * y_velocity_field[1:nx + 1, 1:ny]) - alpha * (T[:, 1:] - T[:, :-1]) / dy 
@@ -185,13 +185,13 @@ def computeTemperatureField(
 
 def applyBoundaryConditions(
         bc: dict,
-        bc_mask: np.array,
         x_velocity_field: np.array,
         y_velocity_field: np.array,
         x_flux_x,
         y_flux_x,
         x_flux_y,
-        y_flux_y
+        y_flux_y,
+        bc_mask: np.array = None,
     ) -> None:
 
     # x_mask = np.full(x_velocity_field.shape, False)
@@ -218,11 +218,17 @@ def applyBoundaryConditions(
     x_velocity_field[0, :] = bc["uwest"]
     x_velocity_field[-1, :] = bc["ueast"]
 
-   
+    base_mask = bc_mask[:, :]
+    right_shifted = np.roll(bc_mask, 1, 0)
+    up_shifted = np.roll(bc_mask, 1, 1)
 
-    # x_velocity_field[:, :] = np.where(x_mask, x_zeros, x_velocity_field)
-    # y_velocity_field[:, :] = np.where(y_mask, y_zeros, y_velocity_field)
+    # Mask out 'dead cells' to create obstacles if specified, ignore if not specified or mask is all False
+    if bc_mask is not None:
+        x_velocity_field[np.pad(base_mask, ((1, 0), (1, 1)), mode = 'constant', constant_values = False)] = 0
+        x_velocity_field[np.pad(up_shifted, ((1, 0), (1, 1)), mode = 'constant', constant_values = False)] = 0
 
+        y_velocity_field[np.pad(base_mask, ((1, 1), (1, 0)), mode = 'constant', constant_values = False)] = 0
+        y_velocity_field[np.pad(right_shifted, ((1, 1), (1, 0)), mode = 'constant', constant_values = False)] = 0
 
 
 
