@@ -6,7 +6,7 @@ from pressure_corrector import successiveOverRelaxation
 
 
 def computeFluxes(
-        T: np.array,
+        T,
         rho: float,
         mu: float,
         nx: int,
@@ -51,7 +51,7 @@ def computeFluxes(
             y_star_field[i, j] = y_velocity_field[i, j] - (dt / (dx * dy)) * (dy * (east_flux - west_flux) + dx * (north_flux - south_flux)) + dt * gy
 
             # Compute body force from natural convection
-            y_star_field[i, j] =- dt * 0.002 * (((T[i - 1, j] + T[i - 1, j - 1]) / 2) - 300) * gy
+            #y_star_field[i, j] =- dt * 0.002 * (((T[i - 1, j] + T[i - 1, j - 1]) / 2) - 300) * gy
 
 def correctVelocities(
         dt: float,
@@ -70,14 +70,12 @@ def correctVelocities(
         pressure: np.array
     ) -> None:
     
-    # Vector pressure computatiion
     prhs[1:nx + 1, 1:ny + 1] = (rho / dt) * ((x_star_field[1:nx + 1, 1:ny + 1] - x_star_field[:nx, 1:ny + 1]) / dx + (y_star_field[1:nx + 1, 1:ny + 1] - y_star_field[1:nx + 1, :ny]) / dy)
 
     beta = 1.2
 
     pressure, error = successiveOverRelaxation(beta,  nx, ny, pressure, prhs, coeffs)
 
-    # Update velocities in vectorised form
     x_velocity_field[1:nx, 1:ny + 1] = x_star_field[1:nx, 1:ny + 1] - dt / dx * (pressure[2:nx + 1, 1:ny + 1] - pressure[1:nx, 1:ny + 1]) / rho       
     y_velocity_field[1:nx + 1, 1:ny] = y_star_field[1:nx + 1, 1:ny] - dt / dy * (pressure[1:nx + 1, 2:ny + 1] - pressure[1:nx + 1, 1:ny]) / rho
 
@@ -94,7 +92,7 @@ def computeTemperatureField(
     ) -> None:
 
     T_wall_t = 300
-    T_wall_b = 400
+    T_wall_b = 1000
 
     x_flux[1:-1, :] = (((T[1:, :] + T[:-1, :]) / 2) * x_velocity_field[1:nx, 1:nx + 1]) - alpha * (T[1:, :] - T[:-1, :]) / dx
     y_flux[:, 1:-1] = (((T[:, 1:] + T[:, :-1]) / 2) * y_velocity_field[1:nx + 1, 1:ny]) - alpha * (T[:, 1:] - T[:, :-1]) / dy 
@@ -128,17 +126,17 @@ def applyBoundaryConditions(
     x_velocity_field[0, :] = bc["uwest"]
     x_velocity_field[-1, :] = bc["ueast"]
 
-    # base_mask = bc_mask[:, :]
-    # right_shifted = np.roll(bc_mask, 1, 0)
-    # up_shifted = np.roll(bc_mask, 1, 1)
+    base_mask = bc_mask[:, :]
+    right_shifted = np.roll(bc_mask, 1, 0)
+    up_shifted = np.roll(bc_mask, 1, 1)
 
-    # # Mask out 'dead cell fluxes' to create obstacles if specified, ignore if not specified or mask is all False
-    # if bc_mask is not None:
-    #     x_velocity_field[np.pad(base_mask, ((1, 0), (1, 1)), mode = 'constant', constant_values = False)] = 0
-    #     x_velocity_field[np.pad(up_shifted, ((1, 0), (1, 1)), mode = 'constant', constant_values = False)] = 0
+    # Mask out 'dead cell fluxes' to create obstacles if specified, ignore if not specified or mask is all False
+    if bc_mask is not None:
+        x_velocity_field[np.pad(base_mask, ((1, 0), (1, 1)), mode = 'constant', constant_values = False)] = 0
+        x_velocity_field[np.pad(up_shifted, ((1, 0), (1, 1)), mode = 'constant', constant_values = False)] = 0
 
-    #     y_velocity_field[np.pad(base_mask, ((1, 1), (1, 0)), mode = 'constant', constant_values = False)] = 0
-    #     y_velocity_field[np.pad(right_shifted, ((1, 1), (1, 0)), mode = 'constant', constant_values = False)] = 0
+        y_velocity_field[np.pad(base_mask, ((1, 1), (1, 0)), mode = 'constant', constant_values = False)] = 0
+        y_velocity_field[np.pad(right_shifted, ((1, 1), (1, 0)), mode = 'constant', constant_values = False)] = 0
 
 
 

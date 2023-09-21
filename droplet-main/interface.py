@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas
 import json
-import engine as DropletEngine
+import engine_p as DropletEngine
 import tqdm
 
 def loadJSON(
@@ -117,8 +117,8 @@ class World:
             DropletEngine.applyBoundaryConditions(self.bc, x_velocity_field, y_velocity_field, x_flux_x, y_flux_x, x_flux_y, y_flux_y, bc_mask = self.bc_mask)
             
             DropletEngine.computeFluxes(T, rho, mu, self.nx, self.ny, dt, self.gx, self.gy, dx, dy, x_velocity_field, y_velocity_field, x_flux_x, y_flux_x, x_flux_y, y_flux_y, x_star_field, y_star_field)
-            #DropletEngine.computeStarredVelocities(dt, gx, gy, rho, mu, self.nx, self.ny, dx, dy, x_flux_x, y_flux_x, x_flux_y, y_flux_y, x_velocity_field, y_velocity_field, x_star_field, y_star_field, T, T_cool, 0.002)
             DropletEngine.computeTemperatureField(dt, temp_bc, self.nx, self.ny, dx, dy, x_velocity_field, y_velocity_field, t_x_flux, t_y_flux, alpha, T)
+            #DropletEngine.computeStarredVelocities(dt, gx, gy, rho, mu, self.nx, self.ny, dx, dy, x_flux_x, y_flux_x, x_flux_y, y_flux_y, x_velocity_field, y_velocity_field, x_star_field, y_star_field, T, T_cool, 0.002)
             DropletEngine.correctVelocities(dt, coeffs, rho, mu, self.nx, self.ny, dx, dy, prhs, x_velocity_field, y_velocity_field, x_star_field, y_star_field, pressure)
             
 

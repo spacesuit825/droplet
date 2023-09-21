@@ -31,7 +31,7 @@ world = World("test_world")
 world.setUpWorld(setup)
 world.generateBCMask(mask)
 
-world.runSimulation(4000, 1.0, True)
+world.runSimulation(5000, 50.0, True)
 
 
 

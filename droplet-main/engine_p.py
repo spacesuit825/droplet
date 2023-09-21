@@ -6,7 +6,7 @@ from pressure_corrector import successiveOverRelaxation
 
 
 def computeFluxes(
-        T: np.array,
+        T,
         rho: float,
         mu: float,
         nx: int,
@@ -25,8 +25,8 @@ def computeFluxes(
         x_star_field: np.array,
         y_star_field: np.array
     ) -> None:
-
-    # x-momentum contribution to velocity
+    
+       
     for i in range(1, nx):
         for j in range(1, ny + 1):
             east_flux = 0.25 * (x_velocity_field[i + 1, j] + x_velocity_field[i, j])**2 - mu * (x_velocity_field[i + 1, j] - x_velocity_field[i, j]) / dx
@@ -34,24 +34,69 @@ def computeFluxes(
             west_flux = 0.25 * (x_velocity_field[i, j] + x_velocity_field[i - 1, j])**2 - mu * (x_velocity_field[i, j] - x_velocity_field[i - 1, j]) / dx
             south_flux = 0.25 * (y_velocity_field[i, j - 1] + y_velocity_field[i + 1, j - 1]) * (x_velocity_field[i, j] + x_velocity_field[i, j - 1]) - mu * (x_velocity_field[i, j] - x_velocity_field[i, j - 1]) / dy
             
-            x_star_field[i, j] = x_velocity_field[i, j] - (dt / (dx * dy)) * (dy * (east_flux - west_flux) + dx * (north_flux - south_flux)) + dt * gx 
-            # Note gx is zero so no boussenique here
-
-    # y-momentum contribution to velocity   
+            x_star_field[i, j] = x_velocity_field[i, j] - (dt / (dx * dy)) * (dy * (east_flux - west_flux) + dx * (north_flux - south_flux)) # Add bousinessque
+            
     for i in range(1, nx + 1):
         for j in range(1, ny):
-
-            # Compute cell fluxes
             east_flux = 0.25 * (x_velocity_field[i, j + 1] + x_velocity_field[i, j]) * (y_velocity_field[i + 1, j] + y_velocity_field[i, j]) - mu * (y_velocity_field[i + 1, j] - y_velocity_field[i, j]) / dx
             north_flux = 0.25 * (y_velocity_field[i, j + 1] + y_velocity_field[i, j])**2 - mu * (y_velocity_field[i, j + 1] - y_velocity_field[i, j]) / dy
             west_flux = 0.25 * (x_velocity_field[i - 1, j + 1] + x_velocity_field[i - 1, j]) * (y_velocity_field[i, j] + y_velocity_field[i - 1, j]) - mu * (y_velocity_field[i, j] - y_velocity_field[i - 1, j]) / dx
             south_flux = 0.25 * (y_velocity_field[i, j] + y_velocity_field[i, j - 1])**2 - mu * (y_velocity_field[i, j] - y_velocity_field[i, j - 1]) / dy
 
-            # Compute estimation (v*) of velocity
-            y_star_field[i, j] = y_velocity_field[i, j] - (dt / (dx * dy)) * (dy * (east_flux - west_flux) + dx * (north_flux - south_flux)) + dt * gy
+            y_star_field[i, j] = y_velocity_field[i, j] - (dt / (dx * dy)) * (dy * (east_flux - west_flux) + dx * (north_flux - south_flux))
 
-            # Compute body force from natural convection
-            y_star_field[i, j] =- dt * 0.002 * (((T[i - 1, j] + T[i - 1, j - 1]) / 2) - 300) * gy
+            y_star_field[i, j] += dt * 0.0002 * (((T[i - 1, j] + T[i - 1, j - 1]) / 2) - 300) * gy
+
+    #y_star_field[1:nx + 1, 1:ny] -= dt * 0.002 * (((T[:, 1:] + T[:, :-1]) / 2) - 300) * gy
+
+    #         #z[i, j] = east_flux - west_flux
+
+def computeStarredVelocities(
+        dt: float,
+        gx: float,
+        gy: float,
+        rho: float,
+        mu: float,
+        nx: int,
+        ny: int,
+        dx: float,
+        dy: float,
+        x_flux_x: np.array,
+        y_flux_x: np.array,
+        x_flux_y: np.array,
+        y_flux_y: np.array,
+        x_velocity_field: np.array,
+        y_velocity_field: np.array,
+        x_star_field: np.array,
+        y_star_field: np.array,
+        T,
+        T_0,
+        beta
+    ) -> None:
+
+    # Perform initial velocity estimation
+    x_star_field[1:nx, 1:ny + 1] = x_velocity_field[1:nx, 1:ny + 1] - (dt / (dx * dy)) * (dy * (x_flux_x)[1:nx, 1:ny + 1] + dx * (y_flux_x)[1:nx, 1:ny + 1])+ dt * gx - dt * beta * (((T[1:, :] + T[:-1, :]) / 2) - T_0) * gx
+    y_star_field[1:nx + 1, 1:ny] = y_velocity_field[1:nx + 1, 1:ny] - (dt / (dx * dy)) * (dy * (x_flux_y)[1:nx + 1, 1:ny] + dx * (y_flux_y)[1:nx + 1, 1:ny]) + dt * gy - dt * beta * (((T[:, 1:] + T[:, :-1]) / 2) - T_0) * gx
+
+    # Account for temperature at the boundaries
+    x_star_field[0, 1:ny + 1] -= dt * beta * (T[0, :] - T_0) * gx
+    x_star_field[-1, 1:ny + 1] -= dt * beta * (T[-1, :] - T_0) * gx
+
+    y_star_field[1:nx + 1, 0] -= dt * beta * (T[:, 0] - T_0) * gx
+    y_star_field[1:nx + 1, -1] -= dt * beta * (T[:, -1] - T_0) * gx
+    # for i in range(1, nx):
+    #     for j in range(1, ny):
+    #         x_star_field[i, j] -=  dt * beta * (T[i, j] - T_0) * gx
+    #         y_star_field[i, j] -=  dt * beta * (T[i, j] - T_0) * gy
+
+    # for i in range(1, nx):
+    #     for j in range(1, ny + 1):
+    #         x_star_field[i, j] = x_velocity_field[i, j] - (dt / (dx * dy)) * (dy * (x_flux_x[i, j] - x_flux_x[i - 1, j]) + dx * (y_flux_x[i, j] - y_flux_x[i, j - 1])) + dt * gx
+
+    # for i in range(1, nx + 1):
+    #     for j in range(1, ny):
+    #         y_star_field[i, j] = y_velocity_field[i, j] - (dt / (dx * dy)) * (dy * (x_flux_y[i, j] - x_flux_y[i - 1, j]) + dx * (y_flux_y[i, j] - y_flux_y[i, j - 1])) + dt * gy
+
 
 def correctVelocities(
         dt: float,
@@ -70,14 +115,24 @@ def correctVelocities(
         pressure: np.array
     ) -> None:
     
-    # Vector pressure computatiion
+    # for i in range(1, nx + 1):
+    #     for j in range(1, nx + 1):
+    #         prhs[i, j] = (rho / dt) * ((x_star_field[i, j] - x_star_field[i - 1, j]) / dx + (y_star_field[i, j] - y_star_field[i, j - 1]) / dy)
     prhs[1:nx + 1, 1:ny + 1] = (rho / dt) * ((x_star_field[1:nx + 1, 1:ny + 1] - x_star_field[:nx, 1:ny + 1]) / dx + (y_star_field[1:nx + 1, 1:ny + 1] - y_star_field[1:nx + 1, :ny]) / dy)
 
     beta = 1.2
 
     pressure, error = successiveOverRelaxation(beta,  nx, ny, pressure, prhs, coeffs)
 
-    # Update velocities in vectorised form
+     # Correct the u velocity
+    # for i in range(1, nx):
+    #     for j in range(1, ny + 1):
+    #         x_velocity_field[i, j] = x_star_field[i, j] - dt / dx * (pressure[i + 1, j] - pressure[i, j]) / rho
+
+    # for i in range(1, nx + 1):
+    #     for j in range(1, ny):
+    #         y_velocity_field[i, j] = y_star_field[i, j] - dt / dy * (pressure[i, j + 1] - pressure[i, j]) / rho
+
     x_velocity_field[1:nx, 1:ny + 1] = x_star_field[1:nx, 1:ny + 1] - dt / dx * (pressure[2:nx + 1, 1:ny + 1] - pressure[1:nx, 1:ny + 1]) / rho       
     y_velocity_field[1:nx + 1, 1:ny] = y_star_field[1:nx + 1, 1:ny] - dt / dy * (pressure[1:nx + 1, 2:ny + 1] - pressure[1:nx + 1, 1:ny]) / rho
 
@@ -91,7 +146,7 @@ def computeTemperatureField(
         y_flux: np.array,
         alpha: float,
         T: np.array
-    ) -> None:
+    ):
 
     T_wall_t = 300
     T_wall_b = 400
@@ -99,10 +154,10 @@ def computeTemperatureField(
     x_flux[1:-1, :] = (((T[1:, :] + T[:-1, :]) / 2) * x_velocity_field[1:nx, 1:nx + 1]) - alpha * (T[1:, :] - T[:-1, :]) / dx
     y_flux[:, 1:-1] = (((T[:, 1:] + T[:, :-1]) / 2) * y_velocity_field[1:nx + 1, 1:ny]) - alpha * (T[:, 1:] - T[:, :-1]) / dy 
 
-    x_flux[0, :] = ((T[0, :])) * x_velocity_field[0, 1:ny + 1]
-    x_flux[-1, :] = ((T[-1, :])) * x_velocity_field[-1, 1:ny + 1]
+    x_flux[0, :] = ((T[0, :])) * x_velocity_field[0, 1:ny + 1] #((T_wall_l + T[0, :]) / 2) * x_velocity_field[0, :] - alpha * (T[0, :] - T_wall_l) / (dx / 2.0) #
+    x_flux[-1, :] = ((T[-1, :])) * x_velocity_field[-1, 1:ny + 1] #((T_wall_l + T[-1, :]) / 2) * u[-1, :] - alpha * (T[-1, :] - T_wall_l) / (dx / 2.0)
 
-    y_flux[:, 0] = ((T_wall_b + T[:, 0]) / 2) * y_velocity_field[1:nx + 1, 0] - alpha * (T[:, 0] - T_wall_b) / (dy / 2.0)
+    y_flux[:, 0] = ((T_wall_b + T[:, 0]) / 2) * y_velocity_field[1:nx + 1, 0] - alpha * (T[:, 0] - T_wall_b) / (dy / 2.0) #1#100 * Lx
     y_flux[:, -1] = ((T_wall_t + T[:, -1]) / 2) * y_velocity_field[1:nx + 1, -1] - alpha * (T_wall_t - T[:, -1]) / (dy / 2.0)
 
     T[:, :] = T[:, :] - (dt / (dx * dy)) * (dy * (x_flux[1:, :] - x_flux[:-1, :]) + dx * (y_flux[:, 1:] - y_flux[:, :-1]))
@@ -118,6 +173,20 @@ def applyBoundaryConditions(
         bc_mask: np.array = None,
     ) -> None:
 
+    # x_mask = np.full(x_velocity_field.shape, False)
+    # x_zeros = np.full(x_velocity_field.shape, 0)
+    # for i in range(bc_mask.shape[0] + 1):
+    #     for j in range(bc_mask.shape[1] + 1):
+    #         if bc_mask[i - 1, j - 2] == True:
+    #             x_mask[i - 2, j] = True
+
+    # y_mask = np.full(y_velocity_field.shape, False)
+    # y_zeros = np.full(y_velocity_field.shape, 0)
+    # for i in range(bc_mask.shape[0] + 1):
+    #     for j in range(bc_mask.shape[1] + 1):
+    #         if bc_mask[i - 1, j - 2] == True:
+    #             y_mask[i, j - 2] = True
+
     x_velocity_field[:, 0] = 2 * bc["usouth"] - x_velocity_field[:, 1]
     x_velocity_field[:, -1] = 2 * bc["unorth"] - x_velocity_field[:, -2]
     y_velocity_field[0, :] = 2 * bc["vwest"] - y_velocity_field[1, :]
@@ -128,17 +197,17 @@ def applyBoundaryConditions(
     x_velocity_field[0, :] = bc["uwest"]
     x_velocity_field[-1, :] = bc["ueast"]
 
-    # base_mask = bc_mask[:, :]
-    # right_shifted = np.roll(bc_mask, 1, 0)
-    # up_shifted = np.roll(bc_mask, 1, 1)
+    base_mask = bc_mask[:, :]
+    right_shifted = np.roll(bc_mask, 1, 0)
+    up_shifted = np.roll(bc_mask, 1, 1)
 
-    # # Mask out 'dead cell fluxes' to create obstacles if specified, ignore if not specified or mask is all False
-    # if bc_mask is not None:
-    #     x_velocity_field[np.pad(base_mask, ((1, 0), (1, 1)), mode = 'constant', constant_values = False)] = 0
-    #     x_velocity_field[np.pad(up_shifted, ((1, 0), (1, 1)), mode = 'constant', constant_values = False)] = 0
+    # Mask out 'dead cells' to create obstacles if specified, ignore if not specified or mask is all False
+    if bc_mask is not None:
+        x_velocity_field[np.pad(base_mask, ((1, 0), (1, 1)), mode = 'constant', constant_values = False)] = 0
+        x_velocity_field[np.pad(up_shifted, ((1, 0), (1, 1)), mode = 'constant', constant_values = False)] = 0
 
-    #     y_velocity_field[np.pad(base_mask, ((1, 1), (1, 0)), mode = 'constant', constant_values = False)] = 0
-    #     y_velocity_field[np.pad(right_shifted, ((1, 1), (1, 0)), mode = 'constant', constant_values = False)] = 0
+        y_velocity_field[np.pad(base_mask, ((1, 1), (1, 0)), mode = 'constant', constant_values = False)] = 0
+        y_velocity_field[np.pad(right_shifted, ((1, 1), (1, 0)), mode = 'constant', constant_values = False)] = 0
 
 
 
